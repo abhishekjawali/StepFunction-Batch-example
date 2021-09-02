@@ -1,0 +1,52 @@
+{
+  "Comment": "An example of the Amazon States Language for notification on an AWS Fargate task completion",
+  "StartAt": "Run Fargate Task",
+  "TimeoutSeconds": 3600,
+  "States": {
+    "Run Fargate Task": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::ecs:runTask.waitForTaskToken",
+      "Parameters": {
+        "LaunchType": "FARGATE",
+        "Cluster": "arn:aws:ecs:us-east-2:885629272022:cluster/amazon-ecs-java-starter-kit-pattern-1",
+        "TaskDefinition": "arn:aws:ecs:us-east-2:885629272022:task-definition/amazon-ecs-java-starter-kit-pattern-2:2",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "Subnets": [
+              "subnet-355e3179"
+            ],
+            "AssignPublicIp": "ENABLED"
+          }
+        },
+        "Overrides": {
+          "ContainerOverrides": [
+            {
+              "Name": "amazon-ecs-java-starter-kit",
+              "Environment": [
+                {
+                  "Name": "TASK_TOKEN",
+                  "Value.$": "$$.Task.Token"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "Next": "Notify Success",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.TaskFailed"
+          ],
+          "BackoffRate": 2,
+          "IntervalSeconds": 60,
+          "MaxAttempts": 3,
+          "Comment": "retry1"
+        }
+      ]
+    },
+    "Notify Success": {
+      "Type": "Succeed"
+    }
+  }
+}
